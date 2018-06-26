@@ -2,30 +2,38 @@ package main
 
 import (
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"time"
 )
 
 // Blockchain represents the entire chain
 type Blockchain struct {
-	Chain               []*Block
+	Chain               Blocks
 	CurrentTransactions []*Transaction
 }
 
 // Block represents a single block in the chain
 type Block struct {
-	Index        int
-	Timestamp    time.Time
-	Transactions []*Transaction
-	Proof        int // proof given by POW algorithm
-	PreviousHash string
+	Index        int            `json:"index"`
+	Timestamp    time.Time      `json:"timestamp"`
+	Transactions []*Transaction `json:"transactions"`
+	Proof        int            `json:"proof"` // proof given by POW algorithm
+	PreviousHash string         `json:"previous_hash"`
 }
+
+type Blocks []*Block
 
 // Transaction represents a single transaction in a block
 type Transaction struct {
-	Sender   string
-	Receiver string
-	Amount   int
+	Sender   string `json:"sender"`
+	Receiver string `json:"receiver"`
+	Amount   int    `json:"amount"`
+}
+
+type transactionResponse struct {
+	Index int `json:"index"`
 }
 
 // NewBlockchain is a constructor-like method which returns an empty blockchain
@@ -50,18 +58,26 @@ func (bc *Blockchain) NewBlock(proof int, previousHash string) *Block {
 	return newBlock
 }
 
+// GetChain returns an array of blocks on this chain
+func (bc *Blockchain) GetChain(w http.ResponseWriter, r *http.Request) {
+	json.NewEncoder(w).Encode(bc.Chain)
+}
+
 // LastBlock returns the last block in the chain
 func (bc *Blockchain) LastBlock() *Block {
 	return bc.Chain[len(bc.Chain)-1]
 }
 
-// NewTransaction creates a new transaction in the chain
-func (bc *Blockchain) NewTransaction(sender string, receiver string, amount int) int {
-	transaction := &Transaction{sender, receiver, amount}
-	bc.CurrentTransactions = append(bc.CurrentTransactions, transaction)
+// NewTransaction adds a new transaction in the chain
+func (bc *Blockchain) NewTransaction(w http.ResponseWriter, r *http.Request) {
+	var transaction Transaction
+	if err := json.NewDecoder(r.Body).Decode(&transaction); err != nil {
+		panic(err)
+	}
 
-	// return index of block that will hold this transaction
-	return bc.Chain[len(bc.Chain)-1].Index + 1
+	bc.CurrentTransactions = append(bc.CurrentTransactions, &transaction)
+	res := transactionResponse{Index: bc.Chain[len(bc.Chain)-1].Index + 1}
+	json.NewEncoder(w).Encode(res)
 }
 
 /*
