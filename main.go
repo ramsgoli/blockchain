@@ -6,10 +6,13 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/nu7hatch/gouuid"
+	"github.com/ramsgoli/blockchain/models"
 )
 
 func main() {
-	blockchain := NewBlockchain()
+	blockchain := models.Blockchain{}
+	blockchain.NewBlock(100, "")
+
 	uuid, err := uuid.NewV4()
 	if err != nil {
 		panic(err)
