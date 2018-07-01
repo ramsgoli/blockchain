@@ -13,6 +13,23 @@ type Blockchain struct {
 	Chain               Blocks
 	CurrentTransactions []Transaction
 	ID                  string
+	Nodes               []string
+}
+
+func (bc *Blockchain) NewNode(w http.ResponseWriter, r *http.Request) {
+	var newNodes newNodes
+	if err := json.NewDecoder(r.Body).Decode(&newNodes); err != nil {
+		panic(err)
+	}
+
+	num := 0
+	for _, node := range newNodes.nodes {
+		bc.Nodes = append(bc.Nodes, node)
+		num++
+	}
+
+	res := newNodesResponse{"Successfully received new nodes", num}
+	json.NewEncoder(w).Encode(res)
 }
 
 // NewTransaction adds a new transaction in the chain
@@ -85,11 +102,9 @@ func (bc *Blockchain) hash(block Block) string {
 */
 func (bc *Blockchain) proofOfWork(lastProof int) int {
 	p := 0
-	fmt.Println("here1")
 	for !isValidProof(p, lastProof) {
 		p++
 	}
-	fmt.Println("here2")
 
 	return p
 }
@@ -98,6 +113,5 @@ func isValidProof(nonce int, lastProof int) bool {
 	proof := fmt.Sprintf("%d%d", nonce, lastProof)
 	byteHash := sha256.Sum256([]byte(proof))
 	stringHash := base64.StdEncoding.EncodeToString(byteHash[:])
-	fmt.Println(stringHash)
 	return stringHash[:1] == "0"
 }
