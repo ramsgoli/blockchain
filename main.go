@@ -23,5 +23,6 @@ func main() {
 	router.HandleFunc("/transactions/new", blockchain.NewTransaction).Methods("POST")
 	router.HandleFunc("/chain", blockchain.GetChain).Methods("GET")
 	router.HandleFunc("/mine", blockchain.Mine).Methods("GET")
+	router.HandleFunc("/resolve", blockchain.ResolveConflicts).Methods("GET")
 	log.Fatal(http.ListenAndServe(":8080", router))
 }

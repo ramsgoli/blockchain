@@ -1,5 +1,10 @@
 package models
 
+import (
+	"encoding/json"
+	"net/http"
+)
+
 type transactionResponse struct {
 	Index int `json:"index"`
 }
@@ -11,12 +16,17 @@ type mineResponse struct {
 	PreviousHash string        `json:"previous_hash"`
 }
 
-func (bc *Blockchain) isValidChain() bool {
-	previousBlock := bc.Chain[0]
+type resolve struct {
+	Length  int    `json:"length"`
+	Message string `json:"message"`
+}
+
+func (bc *Blockchain) isValidChain(chain Blocks) bool {
+	previousBlock := chain[0]
 	currentIndex := 1
 
-	for currentIndex < len(bc.Chain) {
-		block := bc.Chain[currentIndex]
+	for currentIndex < len(chain) {
+		block := chain[currentIndex]
 		if bc.hash(previousBlock) != block.PreviousHash {
 			return false
 		}
@@ -30,4 +40,41 @@ func (bc *Blockchain) isValidChain() bool {
 	}
 
 	return true
+}
+
+func (bc *Blockchain) ResolveConflicts(w http.ResponseWriter, r *http.Request) {
+	neighbors := bc.Nodes
+	maxLength := len(bc.Chain)
+	var errors []string
+	var newChain Blocks
+
+	for _, neighbor := range neighbors {
+		res, err := http.Get(neighbor)
+		if err != nil {
+			errors = append(errors, "Could not connect to "+neighbor)
+			continue
+		}
+		defer res.Body.Close()
+
+		var chain Blocks
+		if jsonErr := json.NewDecoder(res.Body).Decode(chain); jsonErr != nil {
+			errors = append(errors, "Could not parse json")
+			continue
+		}
+
+		if bc.isValidChain(chain) && len(chain) > maxLength {
+			maxLength = len(chain)
+			newChain = chain
+		}
+	}
+
+	var s resolve
+	if len(newChain) > 0 {
+		bc.Chain = newChain
+		s = resolve{maxLength, "Found new chain"}
+	} else {
+		s = resolve{maxLength, "This nodes chain is the longest"}
+	}
+	jsonS, _ := json.Marshal(s)
+	w.Write(jsonS)
 }
