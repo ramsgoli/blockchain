@@ -102,15 +102,15 @@ func (bc *Blockchain) hash(block Block) string {
 */
 func (bc *Blockchain) proofOfWork(lastProof int) int {
 	p := 0
-	for !isValidProof(p, lastProof) {
+	for !isValidProof(lastProof, p) {
 		p++
 	}
 
 	return p
 }
 
-func isValidProof(nonce int, lastProof int) bool {
-	proof := fmt.Sprintf("%d%d", nonce, lastProof)
+func isValidProof(lastProof int, nonce int) bool {
+	proof := fmt.Sprintf("%d%d", lastProof, nonce)
 	byteHash := sha256.Sum256([]byte(proof))
 	stringHash := base64.StdEncoding.EncodeToString(byteHash[:])
 	return stringHash[:1] == "0"
