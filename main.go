@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/gorilla/mux"
 	"github.com/nu7hatch/gouuid"
@@ -10,6 +12,11 @@ import (
 )
 
 func main() {
+	if len(os.Args) == 1 {
+		fmt.Println("Port argument required")
+		os.Exit(2)
+	}
+
 	blockchain := models.Blockchain{}
 	blockchain.NewBlock(100, "")
 
@@ -23,6 +30,9 @@ func main() {
 	router.HandleFunc("/transactions/new", blockchain.NewTransaction).Methods("POST")
 	router.HandleFunc("/chain", blockchain.GetChain).Methods("GET")
 	router.HandleFunc("/mine", blockchain.Mine).Methods("GET")
-	router.HandleFunc("/resolve", blockchain.ResolveConflicts).Methods("GET")
-	log.Fatal(http.ListenAndServe(":8080", router))
+	router.HandleFunc("/nodes/resolve", blockchain.ResolveConflicts).Methods("GET")
+	router.HandleFunc("/nodes/register", blockchain.NewNode).Methods("POST")
+
+	portString := fmt.Sprintf(":%s", os.Args[1])
+	log.Fatal(http.ListenAndServe(portString, router))
 }

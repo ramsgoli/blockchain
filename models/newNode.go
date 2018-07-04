@@ -1,7 +1,7 @@
 package models
 
 type newNodes struct {
-	nodes []string
+	Nodes []string `json:"nodes"`
 }
 
 type newNodesResponse struct {

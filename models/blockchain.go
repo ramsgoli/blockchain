@@ -23,7 +23,7 @@ func (bc *Blockchain) NewNode(w http.ResponseWriter, r *http.Request) {
 	}
 
 	num := 0
-	for _, node := range newNodes.nodes {
+	for _, node := range newNodes.Nodes {
 		bc.Nodes = append(bc.Nodes, node)
 		num++
 	}

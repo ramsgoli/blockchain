@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
@@ -49,15 +50,18 @@ func (bc *Blockchain) ResolveConflicts(w http.ResponseWriter, r *http.Request) {
 	var newChain Blocks
 
 	for _, neighbor := range neighbors {
-		res, err := http.Get(neighbor)
+		chainURL := fmt.Sprintf("%s/chain", neighbor)
+		res, err := http.Get(chainURL)
 		if err != nil {
+			fmt.Println("Could not connec to " + chainURL)
 			errors = append(errors, "Could not connect to "+neighbor)
 			continue
 		}
 		defer res.Body.Close()
 
 		var chain Blocks
-		if jsonErr := json.NewDecoder(res.Body).Decode(chain); jsonErr != nil {
+		if jsonErr := json.NewDecoder(res.Body).Decode(&chain); jsonErr != nil {
+			fmt.Println("Could not parse json")
 			errors = append(errors, "Could not parse json")
 			continue
 		}
